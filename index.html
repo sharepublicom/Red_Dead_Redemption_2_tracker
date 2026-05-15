@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RDR2 – Complete Platinum Tracker</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#100c04;--bg1:#0d0a02;--bg2:#1a1408;
+  --border:rgba(212,184,150,.1);--border2:rgba(212,184,150,.2);
+  --gold:#e8c87a;--gold2:#c8a840;--text:#d4b896;--muted:#6a5020;--dim:#3a2808;
+  --blue:#5ba3d0;--red:#c04040;--green:#6a9060;--amber:#c07040;
+}
+body{min-height:100vh;background:linear-gradient(170deg,var(--bg0) 0%,var(--bg1) 60%,#0a0800 100%);font-family:Georgia,'Times New Roman',serif;color:var(--text);font-size:13px}
+
+/* LAYOUT */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:200px;min-width:200px;background:rgba(0,0,0,.4);border-right:1px solid var(--border);padding:16px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
+.main{flex:1;padding:22px 18px;overflow-x:hidden}
+
+/* SIDEBAR */
+.sidebar-title{font-size:9px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;padding:0 14px;margin-bottom:14px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-size:12px;color:var(--muted)}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(232,200,122,.06)}
+.nav-item .icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.nav-item .pct{margin-left:auto;font-size:9px;color:var(--dim)}
+.nav-item.active .pct{color:var(--gold2)}
+.nav-sep{height:1px;background:var(--border);margin:8px 14px}
+
+/* SECTIONS */
+.section{display:none}
+.section.active{display:block}
+.section-header{margin-bottom:20px}
+.section-header h2{font-size:20px;color:var(--gold);letter-spacing:1px}
+.section-header p{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* PROGRESS BARS */
+.prog-bar-bg{height:8px;background:rgba(0,0,0,.5);border-radius:4px;overflow:hidden}
+.prog-bar-fg{height:100%;border-radius:4px;transition:width .4s}
+
+/* DASHBOARD GRID */
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.dash-card{background:rgba(255,255,255,.022);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .15s;border:1px solid var(--border)}
+.dash-card:hover{border-color:var(--border2)}
+.dash-card .d-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.dash-card .d-icon{font-size:20px}
+.dash-card .d-nums{font-size:11px;color:var(--muted)}
+.dash-card .d-name{font-size:12px;color:var(--text);margin-bottom:6px;font-weight:bold}
+.dash-card .d-pct{margin-top:5px;font-size:9px;text-align:right;color:var(--dim)}
+
+/* OVERALL PROGRESS */
+.overall-card{background:linear-gradient(135deg,rgba(232,200,122,.1),rgba(180,150,20,.06));border:1px solid rgba(232,200,122,.25);border-radius:12px;padding:18px 22px;margin-bottom:22px}
+.overall-card .oc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.overall-card h3{font-size:16px;color:var(--gold)}
+.overall-card .oc-pct{font-size:24px;color:var(--gold);font-weight:bold}
+.overall-card .oc-bar{height:12px;background:rgba(0,0,0,.5);border-radius:6px;overflow:hidden;margin-bottom:6px}
+.overall-card .oc-fill{height:100%;background:linear-gradient(90deg,#c8a02060,#e8c87a);border-radius:6px;transition:width .4s}
+.overall-card .oc-sub{font-size:10px;color:var(--muted)}
+
+/* CHALLENGE CATEGORY */
+.ch-cat{background:rgba(255,255,255,.018);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.ch-cat-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;transition:background .15s;user-select:none}
+.ch-cat-header:hover{background:rgba(255,255,255,.03)}
+.ch-cat-icon{font-size:18px;width:28px;text-align:center}
+.ch-cat-name{font-size:13px;color:var(--text);flex:1;font-weight:bold}
+.ch-cat-prog{font-size:11px;color:var(--muted)}
+.ch-cat-arrow{font-size:10px;color:var(--dim);transition:transform .2s}
+.ch-cat.open .ch-cat-arrow{transform:rotate(180deg)}
+.ch-cat-bar{height:3px;background:rgba(0,0,0,.4)}
+.ch-cat-bar-fill{height:100%;background:var(--gold);transition:width .3s}
+.ch-tasks{display:none;border-top:1px solid var(--border)}
+.ch-cat.open .ch-tasks{display:block}
+
+/* TASK ROW */
+.task-row{display:grid;grid-template-columns:32px 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(212,184,150,.05);align-items:center;transition:background .12s;cursor:pointer}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:rgba(255,255,255,.015)}
+.task-row.done{opacity:.6}
+.task-row.done .task-desc{text-decoration:line-through;color:var(--muted)}
+.task-num{font-size:10px;color:var(--dim);font-style:italic}
+.task-desc{font-size:12px;color:var(--text);line-height:1.4}
+.task-desc .tip{font-size:10px;color:var(--muted);display:block;margin-top:2px;font-style:italic}
+.task-right{display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-shrink:0}
+
+/* CHECKBOX */
+.chk{width:24px;height:24px;border-radius:5px;border:2px solid rgba(212,184,150,.2);background:rgba(0,0,0,.3);cursor:pointer;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;color:transparent;transition:all .12s;flex-shrink:0}
+.chk.done{color:var(--c,var(--gold));border-color:var(--c,var(--gold));background:rgba(0,0,0,.15)}
+
+/* COUNTER */
+.counter{display:flex;align-items:center;gap:4px}
+.ctr-btn{width:20px;height:20px;border-radius:4px;border:1px solid rgba(212,184,150,.2);background:rgba(0,0,0,.3);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .12s;line-height:1;padding:0;font-family:inherit}
+.ctr-btn:hover{color:var(--text);border-color:var(--border2)}
+.ctr-val{font-size:11px;color:var(--text);min-width:36px;text-align:center}
+.ctr-val.done{color:var(--gold)}
+
+/* TROPHY LIST */
+.trophy-list{display:flex;flex-direction:column;gap:2px}
+.tr-row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;padding:10px 12px;border-radius:7px;border:1px solid transparent;align-items:start;cursor:pointer;transition:all .12s}
+.tr-row:hover{background:rgba(255,255,255,.02)}
+.tr-row.done{background:rgba(232,200,122,.04);border-color:rgba(232,200,122,.1)}
+.tr-row.missable{border-left:3px solid var(--red)}
+.tr-row.missable.done{border-left-color:var(--gold)}
+.tr-icon{font-size:18px;padding-top:1px}
+.tr-body .tr-name{font-size:12px;color:var(--text);font-weight:bold;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px}
+.tr-body .tr-name.done{color:var(--gold2)}
+.tr-body .tr-desc{font-size:10px;color:var(--muted);line-height:1.5}
+.bdg{font-size:8px;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+
+/* SECTION SUBHEADER */
+.subhdr{font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* ANIMAL TABLE */
+.animal-controls{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+.animal-grid{display:flex;flex-direction:column;gap:1px}
+.an-row{display:grid;grid-template-columns:36px 1fr 64px 64px;gap:6px;padding:6px 10px;border-radius:5px;align-items:center;border:1px solid transparent}
+.an-row:nth-child(even){background:rgba(255,255,255,.01)}
+.an-row.done{background:rgba(232,200,122,.04);border-color:rgba(232,200,122,.08)}
+.an-row.faded{opacity:.5}
+.an-num{font-size:9px;color:var(--dim)}
+.an-name{font-size:11.5px;color:var(--text)}
+.an-name.italic{font-style:italic;color:var(--muted)}
+.an-cell{display:flex;justify-content:center}
+
+/* COUNTER BIG */
+.big-counter{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.bc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.bc-title{font-size:14px;font-weight:bold}
+.bc-nums{font-size:13px;color:var(--muted)}
+.bc-desc{font-size:11px;color:var(--muted);margin-bottom:10px}
+.bc-controls{display:flex;align-items:center;gap:8px}
+.bc-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:rgba(0,0,0,.3);color:var(--text);cursor:pointer;font-family:inherit;font-size:12px;transition:all .12s}
+.bc-btn:hover{border-color:var(--gold);color:var(--gold)}
+.bc-input{width:70px;background:rgba(0,0,0,.4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:13px;text-align:center;padding:5px;font-family:inherit;outline:none}
+
+/* MINIGAME LIST */
+.mg-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mg-item{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px}
+.mg-item:hover{background:rgba(255,255,255,.04)}
+.mg-item.done{background:rgba(232,200,122,.05);border-color:rgba(232,200,122,.2)}
+.mg-icon{font-size:20px}
+.mg-name{font-size:12px;color:var(--text)}
+.mg-loc{font-size:10px;color:var(--muted)}
+.mg-chk{margin-left:auto}
+
+/* COLLECTIBLES */
+.coll-item{background:rgba(255,255,255,.018);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px}
+.coll-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.coll-icon{font-size:18px}
+.coll-name{font-size:13px;color:var(--text);font-weight:bold;flex:1}
+.coll-nums{font-size:11px;color:var(--muted)}
+
+/* SEARCH INPUT */
+.search-bar{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-size:12px;font-family:inherit;outline:none;margin-bottom:12px}
+.search-bar::placeholder{color:var(--muted)}
+
+/* TAG BUTTON */
+.tag-btn{padding:4px 11px;border-radius:14px;font-size:11px;cursor:pointer;font-family:inherit;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--muted);transition:all .12s}
+.tag-btn.on{border-color:var(--gold);background:rgba(232,200,122,.1);color:var(--gold)}
+
+/* ONLINE TASK */
+.ol-row{display:flex;align-items:start;gap:10px;padding:10px 12px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all .12s}
+.ol-row:hover{background:rgba(255,255,255,.02)}
+.ol-row.done{background:rgba(91,163,208,.04);border-color:rgba(91,163,208,.12)}
+.ol-icon{font-size:16px;flex-shrink:0;padding-top:1px}
+.ol-body{flex:1}
+.ol-name{font-size:12px;color:var(--text);font-weight:bold;margin-bottom:2px}
+.ol-name.done{color:var(--blue)}
+.ol-desc{font-size:10px;color:var(--muted);line-height:1.5}
+
+/* STORY */
+.ch-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.015);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.ch-item:hover{background:rgba(255,255,255,.03)}
+.ch-item.done{background:rgba(100,160,100,.06);border-color:rgba(100,160,100,.2)}
+.ch-item .ci-icon{font-size:18px;flex-shrink:0}
+.ch-item .ci-name{flex:1;font-size:13px;color:var(--text)}
+.ch-item.done .ci-name{color:#90c080}
+.ch-item .ci-detail{font-size:10px;color:var(--muted)}
+
+/* RESET BTN */
+.reset-btn{padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit;border:1px solid rgba(180,60,60,.3);background:transparent;color:#7a3030;float:right}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:relative;display:flex;flex-wrap:wrap;gap:2px;padding:10px}
+  .sidebar-title{display:none}
+  .nav-sep{display:none}
+  .nav-item{border-left:none;border-radius:6px;padding:6px 10px;font-size:10px}
+  .nav-item.active{border:1px solid var(--gold)}
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .mg-list{grid-template-columns:1fr}
+  .an-row{grid-template-columns:28px 1fr 52px 52px;font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-title">RDR2 Tracker</div>
+  <div class="nav-item active" data-sec="dashboard"><span class="icon">🏠</span>Dashboard<span class="pct" id="nav-dashboard">0%</span></div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" data-sec="trophies"><span class="icon">🏆</span>Trophies<span class="pct" id="nav-trophies">0/52</span></div>
+  <div class="nav-item" data-sec="story"><span class="icon">📖</span>Story<span class="pct" id="nav-story">0/8</span></div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" data-sec="challenges"><span class="icon">🎯</span>Challenges<span class="pct" id="nav-challenges">0/90</span></div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" data-sec="animals"><span class="icon">🐾</span>Animals<span class="pct" id="nav-animals">0/178</span></div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" data-sec="goldmedals"><span class="icon">🥇</span>Gold Medals<span class="pct" id="nav-goldmedals">0/70</span></div>
+  <div class="nav-item" data-sec="collectibles"><span class="icon">📦</span>Collectibles<span class="pct" id="nav-collectibles">—</span></div>
+  <div class="nav-item" data-sec="minigames"><span class="icon">🎲</span>Mini Games<span class="pct" id="nav-minigames">0/7</span></div>
+  <div class="nav-item" data-sec="strangers"><span class="icon">🗣️</span>Strangers<span class="pct" id="nav-strangers">0/10</span></div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" data-sec="online"><span class="icon">🌐</span>Online<span class="pct" id="nav-online">0/18</span></div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ═══════════════════════════════════════════════ DASHBOARD -->
+<div class="section active" id="sec-dashboard">
+  <div class="section-header">
+    <h2>🏠 Dashboard</h2>
+    <p>Red Dead Redemption 2 — Complete Platinum Tracker · PowerPyx Guide</p>
+  </div>
+  <div class="overall-card">
+    <div class="oc-top"><h3>🌟 Legend of the West — Platinum Progress</h3><div class="oc-pct" id="oc-pct">0%</div></div>
+    <div class="oc-bar"><div class="oc-fill" id="oc-fill" style="width:0%"></div></div>
+    <div class="oc-sub" id="oc-sub">0 of 52 trophies completed</div>
+  </div>
+  <div class="dash-grid" id="dash-grid"></div>
+  <div class="subhdr">Key Reminders</div>
+  <div style="background:rgba(192,64,64,.08);border:1px solid rgba(192,64,64,.2);border-radius:8px;padding:14px 16px;font-size:11px;color:#c08080;line-height:2">
+    <strong style="color:#e08080">⚠️ MISSABLE TROPHIES — Do these in Chapters 2–4:</strong><br/>
+    • <strong>Lending a Hand</strong> — All optional honor missions (play honorably, reach Honor Level 4 by Ch.6)<br/>
+    • <strong>Friends With Benefits</strong> — 1 companion activity per camp (Ch.2, Ch.3, Ch.4)<br/>
+    • <strong>Give to the Poor</strong> — Donate $250 to the tithing box (gone after Ch.4)<br/>
+    • <strong>Errand Boy</strong> — 5 camp item requests (Ch.2–4 only)
+  </div>
+  <div style="margin-top:10px;background:rgba(180,140,20,.08);border:1px solid rgba(180,140,20,.2);border-radius:8px;padding:14px 16px;font-size:11px;color:#a09040;line-height:2">
+    <strong style="color:#c8a840">📋 Roadmap Summary:</strong><br/>
+    Step 1: Story + Missables + Honor + Gold Medals (70/104) + Challenges (90)<br/>
+    Step 2: 100% Completion — Strangers (10+), Collectibles, Mini Games<br/>
+    Step 3: Animals — Study 141 + Skin 71 (Guarma & Legendary NOT required)<br/>
+    Step 4: Online — Rank 50, Posse, Horse, Awards, etc. (~40h with XP exploit)
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ TROPHIES -->
+<div class="section" id="sec-trophies">
+  <div class="section-header">
+    <h2>🏆 All 52 Trophies</h2>
+    <p>Offline: 34 (2 Gold, 4 Silver, 28 Bronze) · Online: 18 · 4 Missable</p>
+    <button class="reset-btn" onclick="resetSection('trophies')">🗑 Reset</button>
+  </div>
+  <input class="search-bar" id="tr-search" placeholder="🔍 Search trophy..." oninput="renderTrophies()"/>
+  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px" id="tr-filters"></div>
+  <div class="trophy-list" id="trophy-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ STORY -->
+<div class="section" id="sec-story">
+  <div class="section-header">
+    <h2>📖 Story Progress</h2>
+    <p>108 story missions · Mark each chapter complete as you go</p>
+    <button class="reset-btn" onclick="resetSection('story')">🗑 Reset</button>
+  </div>
+  <div id="story-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ CHALLENGES -->
+<div class="section" id="sec-challenges">
+  <div class="section-header">
+    <h2>🎯 Challenges — 9 × 10 = 90 Tasks</h2>
+    <p>All 90 challenges required for 100% completion · Track sub-tasks with counters</p>
+    <button class="reset-btn" onclick="resetSection('challenges')">🗑 Reset</button>
+  </div>
+  <div id="challenge-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ ANIMALS -->
+<div class="section" id="sec-animals">
+  <div class="section-header">
+    <h2>🐾 Animals — All 178</h2>
+    <p>Zoologist: Study 141 required · Skin Deep: Skin 71 specific animals</p>
+    <button class="reset-btn" onclick="resetSection('animals')">🗑 Reset</button>
+  </div>
+  <div class="animal-controls">
+    <input class="search-bar" id="an-search" placeholder="🔍 Search..." oninput="renderAnimals()" style="margin:0;flex:1;min-width:160px"/>
+    <div style="display:flex;gap:5px;flex-wrap:wrap" id="an-filters"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:36px 1fr 64px 64px;gap:6px;padding:4px 10px;margin-bottom:4px;border-bottom:1px solid rgba(212,184,150,.08)">
+    <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">#</div>
+    <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">Animal</div>
+    <div style="font-size:9px;color:var(--blue);text-transform:uppercase;letter-spacing:1px;text-align:center">Study</div>
+    <div style="font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:1px;text-align:center">Skin</div>
+  </div>
+  <div class="animal-grid" id="animal-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ GOLD MEDALS -->
+<div class="section" id="sec-goldmedals">
+  <div class="section-header">
+    <h2>🥇 Gold Medals</h2>
+    <p>Need 70 of 104 total story missions · Track your current count</p>
+  </div>
+  <div class="big-counter" style="border-color:rgba(212,180,30,.3)">
+    <div class="bc-top"><span class="bc-title" style="color:#d4b020">🥇 Gold Medals Earned</span><span class="bc-nums" id="gm-nums">0 / 70 needed</span></div>
+    <div class="bc-desc">Earn 70 Gold Medals in Story missions for the <strong>Gold Rush</strong> trophy. There are 104 missions total with Gold Medals — you only need 70. Track your count here. Check the Gold Medals Guide on powerpyx.com for all tasks.</div>
+    <div class="prog-bar-bg" style="margin-bottom:10px"><div class="prog-bar-fg" id="gm-bar" style="background:linear-gradient(90deg,#d4b02060,#d4b020);width:0%"></div></div>
+    <div class="bc-controls">
+      <button class="bc-btn" onclick="adjCounter('goldmedals',-5)">−5</button>
+      <button class="bc-btn" onclick="adjCounter('goldmedals',-1)">−1</button>
+      <input class="bc-input" type="number" min="0" max="104" id="gm-input" value="0" oninput="setCounter('goldmedals',this.value)"/>
+      <button class="bc-btn" onclick="adjCounter('goldmedals',1)">+1</button>
+      <button class="bc-btn" onclick="adjCounter('goldmedals',5)">+5</button>
+    </div>
+  </div>
+  <div style="background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:11px;color:var(--muted);line-height:1.9">
+    <strong style="color:var(--text)">Tips for Gold Medals:</strong><br/>
+    • Each mission has up to 5 objectives (time limit, headshots, accuracy, health, etc.)<br/>
+    • You only need to complete ALL objectives in ONE replay to get the medal<br/>
+    • Use Dead Eye to improve accuracy and headshots<br/>
+    • Replay missions from Pause Menu → Story → any completed mission<br/>
+    • Some missions are easier than others — check the PowerPyx Gold Medals Guide for the easiest 70
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ COLLECTIBLES -->
+<div class="section" id="sec-collectibles">
+  <div class="section-header">
+    <h2>📦 Collectibles</h2>
+    <p>200+ collectibles needed for 100% completion · Track each category</p>
+    <button class="reset-btn" onclick="resetSection('collectibles')">🗑 Reset</button>
+  </div>
+  <div id="coll-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ MINI GAMES -->
+<div class="section" id="sec-minigames">
+  <div class="section-header">
+    <h2>🎲 Mini Games — Hobby Horse</h2>
+    <p>Play all 7 mini games at least once for the <strong>Hobby Horse</strong> trophy</p>
+    <button class="reset-btn" onclick="resetSection('minigames')">🗑 Reset</button>
+  </div>
+  <div class="mg-list" id="mg-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ STRANGERS -->
+<div class="section" id="sec-strangers">
+  <div class="section-header">
+    <h2>🗣️ Stranger Missions</h2>
+    <p>Complete 10 strands for <strong>Western Stranger</strong> trophy · 22 of 26 count</p>
+    <button class="reset-btn" onclick="resetSection('strangers')">🗑 Reset</button>
+  </div>
+  <div id="strangers-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ ONLINE -->
+<div class="section" id="sec-online">
+  <div class="section-header">
+    <h2>🌐 Online Trophies — 18 Total</h2>
+    <p>1 Gold · 1 Silver · 16 Bronze · ~40h with XP exploit</p>
+    <button class="reset-btn" onclick="resetSection('online')">🗑 Reset</button>
+  </div>
+  <div style="background:rgba(91,163,208,.06);border:1px solid rgba(91,163,208,.2);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:#5a90b0;line-height:1.9">
+    <strong style="color:var(--blue)">💰 Money needed:</strong> $2,150 total — Persistent Posse ($200) + 5 Horses ($1,500) + 5 Camp Upgrades ($250) + Horse Stall slots<br/>
+    <strong style="color:var(--blue)">📈 Rank 50:</strong> Needs 175,300 XP. Use the XP exploit for ~7,000 XP/hour.
+  </div>
+  <div id="online-list"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════ DATA
+const KEY = "rdr2-mega-v1";
+let S = {};
+try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
+function get(k,def){ return S[k] !== undefined ? S[k] : def; }
+function set(k,v){ S[k]=v; save(); }
+
+// ── CHALLENGES ───────────────────────────────────────────────────────────────
+// target=null → checkbox only | target=N → counter 0/N
+const CHALLENGES = [
+  { id:"bandit", name:"Bandit", icon:"🤠", color:"#c04040",
+    tasks:[
+      {n:1, desc:"Rob someone or steal something while wearing a mask", target:null},
+      {n:2, desc:"Rob 5 coaches", target:5, tip:"Look for coach icons on the road, hold up the driver."},
+      {n:3, desc:"Rob a bank", target:null, tip:"Rob any town bank at gunpoint."},
+      {n:4, desc:"Blow open 3 lock boxes with dynamite", target:3},
+      {n:5, desc:"Rob a train without being detected by law", target:null, tip:"Wear a mask, keep the robbery quick."},
+      {n:6, desc:"Steal 5 horses from rivals or enemies", target:5},
+      {n:7, desc:"Kill 5 lawmen with a Tomahawk", target:5, tip:"Craft throwing tomahawks or buy them from fences."},
+      {n:8, desc:"Hogtie a stranger and leave them on the railroad tracks", target:null},
+      {n:9, desc:"Commit 5 crimes within 5 minutes while wearing a mask", target:null, tip:"Rob, assault, and kill rapidly in one area."},
+      {n:10, desc:"Complete all Bandit Challenges", target:null, tip:"Reward: Bandit Bandolier"},
+    ]},
+  { id:"explorer", name:"Explorer", icon:"🗺️", color:"#5ba3d0",
+    tasks:[
+      {n:1, desc:"Find 5 buried treasures using Treasure Maps", target:5, tip:"Collect maps from bandits or buy from fences."},
+      {n:2, desc:"Discover 5 Outlaw Hideouts or enemy camps", target:5},
+      {n:3, desc:"Find 10 Rock Carvings", target:10, tip:"Found across cliffs in New Austin and New Hanover."},
+      {n:4, desc:"Find 5 Dinosaur Bones", target:5, tip:"Yellow markers on exposed rock surfaces."},
+      {n:5, desc:"Find 5 Dream Catchers", target:5, tip:"Hanging in trees across the map."},
+      {n:6, desc:"Find the graves of all fallen companions", target:null, tip:"9 graves total, only accessible after story."},
+      {n:7, desc:"Find 5 Arrowhead locations", target:5, tip:"On the ground near rivers and cliffsides."},
+      {n:8, desc:"Collect all required Exotics for Algernon Wasp", target:null},
+      {n:9, desc:"Discover and visit all 5 States", target:5, tip:"New Austin, Lemoyne, New Hanover, Ambarino, West Elizabeth."},
+      {n:10, desc:"Complete all Explorer Challenges", target:null, tip:"Reward: Explorer Map"},
+    ]},
+  { id:"gambler", name:"Gambler", icon:"🃏", color:"#c8a040",
+    tasks:[
+      {n:1, desc:"Win 3 hands of Blackjack", target:3, tip:"Played in Rhodes Saloon."},
+      {n:2, desc:"Win 3 games of Poker", target:3, tip:"Played in Saint Denis Saloon."},
+      {n:3, desc:"Win a game of Five Finger Fillet at 3 different locations", target:3, tip:"Flatneck Station, Emerald Ranch, Strawberry."},
+      {n:4, desc:"Win 3 games of Dominoes", target:3, tip:"Played in Saint Denis Park."},
+      {n:5, desc:"Win 3 hands of Blackjack with a score of exactly 21", target:3},
+      {n:6, desc:"Win at Blackjack 3 times by only receiving 2 cards (no drawing)", target:3, tip:"Stand on your first 2 cards and win."},
+      {n:7, desc:"Win 3 games of Poker without losing a single hand", target:3},
+      {n:8, desc:"Win Five Finger Fillet at Flatneck Station, Emerald Ranch & Strawberry", target:null},
+      {n:9, desc:"Win 3 games of Dominoes without drawing any tiles from the board", target:3, tip:"Play all tiles from your hand only — most difficult challenge!"},
+      {n:10, desc:"Complete all Gambler Challenges", target:null, tip:"Reward: Gambler Hat"},
+    ]},
+  { id:"herbalist", name:"Herbalist", icon:"🌿", color:"#6a9060",
+    tasks:[
+      {n:1, desc:"Pick 6 different species of herbs", target:6},
+      {n:2, desc:"Eat 4 types of berries found in the wild", target:4},
+      {n:3, desc:"Craft 5 items using Yarrow", target:5, tip:"Yarrow heals — common in West Elizabeth."},
+      {n:4, desc:"Craft a Special Health Cure", target:null, tip:"Requires multiple herbs — see crafting menu."},
+      {n:5, desc:"Pick 7 different types of plants", target:7},
+      {n:6, desc:"Craft a Special Snake Oil", target:null},
+      {n:7, desc:"Pick 5 species of plants found in swamp areas", target:5, tip:"Hunt in Bayou Nwa (Lemoyne)."},
+      {n:8, desc:"Pick all 43 species of plants in the game", target:43, tip:"Use Eagle Eye to spot glowing plants. Hardest Herbalist challenge."},
+      {n:9, desc:"Craft 5 Potent Health Cures", target:5},
+      {n:10, desc:"Complete all Herbalist Challenges", target:null, tip:"Reward: Herbalist Hat"},
+    ]},
+  { id:"horseman", name:"Horseman", icon:"🐴", color:"#9a7040",
+    tasks:[
+      {n:1, desc:"Kill 5 enemies while on horseback using a rifle", target:5},
+      {n:2, desc:"Break 5 wild horses and keep them", target:5, tip:"Approach wild horses slowly and calm them."},
+      {n:3, desc:"Reach Horse Bonding Level 4 with any horse", target:null, tip:"Groom, feed, and ride your horse regularly."},
+      {n:4, desc:"Trample 5 enemies using your horse", target:5, tip:"Ride directly into enemies at full gallop."},
+      {n:5, desc:"Win a horse race", target:null, tip:"Races available in various locations across the map."},
+      {n:6, desc:"Jump over 3 obstacles in 15 seconds on horseback", target:null, tip:"Find a fence row and gallop through them quickly."},
+      {n:7, desc:"Ride from Strawberry to Saint Denis in 17 minutes or less", target:null, tip:"Use a fast horse and horse stimulants. Ride along roads."},
+      {n:8, desc:"Kill 3 enemies from horseback using a bow", target:3},
+      {n:9, desc:"Travel over 5,000m on horseback without dismounting", target:null},
+      {n:10, desc:"Complete all Horseman Challenges", target:null, tip:"Reward: Horseman Spurs"},
+    ]},
+  { id:"hunter", name:"Master Hunter", icon:"🎯", color:"#c07040",
+    tasks:[
+      {n:1, desc:"Skin 3 black or grizzly bears", target:3, tip:"Black Bears: Roanoke Ridge. Grizzlies: north Ambarino."},
+      {n:2, desc:"Kill 10 animals using a Bow without alerting them", target:10, tip:"Stay downwind, crouch, and take clean shots."},
+      {n:3, desc:"Catch 3 fish using only fishing lures (no bait)", target:3},
+      {n:4, desc:"Kill 5 Coyotes with a Varmint Rifle", target:5},
+      {n:5, desc:"Kill 5 flying birds using only a Varmint Rifle", target:5, tip:"Aim ahead of the bird to lead the shot."},
+      {n:6, desc:"Skin 3 Alligators", target:3, tip:"Found in Bayou Nwa and Bluewater Marsh."},
+      {n:7, desc:"Lure and kill 3 animals at night using animal bait", target:3, tip:"Place bait, hide downwind, and wait."},
+      {n:8, desc:"Track and kill 10 animals using Eagle Eye (R3) to track them", target:10},
+      {n:9, desc:"Complete 9 Hunting Requests for the Camp", target:9, tip:"Leave carcasses or parts at the train station post box."},
+      {n:10, desc:"Complete all Master Hunter Challenges", target:null, tip:"Reward: Master Hunter Coat"},
+    ]},
+  { id:"sharp", name:"Sharpshooter", icon:"🔫", color:"#7a9a7a",
+    tasks:[
+      {n:1, desc:"Kill 3 flying birds from a moving train", target:3, tip:"Board a train and shoot birds from the roof or window."},
+      {n:2, desc:"Kill 2 enemies with one Dead Eye charge using throwing knives", target:2},
+      {n:3, desc:"Kill someone at 660 feet (~200m) with a rifle", target:null, tip:"Use a long scope rifle. Check distance in binoculars."},
+      {n:4, desc:"Disarm 3 enemies without killing them", target:3, tip:"Aim at the weapon in Dead Eye and shoot it from their hand."},
+      {n:5, desc:"Get 3 kills in a single Dead Eye activation", target:null, tip:"Mark 3 targets with Dead Eye then fire."},
+      {n:6, desc:"Kill an enemy within 10 seconds of a gunfight starting without Dead Eye", target:null},
+      {n:7, desc:"Kill 2 animals with a single bullet", target:null, tip:"Line up animals in a row. Works best with deer in a herd."},
+      {n:8, desc:"Kill 3 enemies from a moving train using Dead Eye", target:3},
+      {n:9, desc:"Score 3 headshots in a row without using Dead Eye", target:null, tip:"Manual aim — practice in a low-wanted area."},
+      {n:10, desc:"Complete all Sharpshooter Challenges", target:null, tip:"Reward: Sharpshooter Bandolier"},
+    ]},
+  { id:"surv", name:"Survivalist", icon:"🧪", color:"#6a8090",
+    tasks:[
+      {n:1, desc:"Craft 5 items from the crafting menu", target:5},
+      {n:2, desc:"Craft 5 different types of ammunition", target:5, tip:"Use the campfire crafting menu — requires recipes from fences."},
+      {n:3, desc:"Find and identify 5 different types of herbs", target:5},
+      {n:4, desc:"Catch 5 fish using the appropriate lure or bait for the water", target:5},
+      {n:5, desc:"Craft 10 items total", target:10},
+      {n:6, desc:"Craft 5 Throwing Knife ammunition using feathers", target:5},
+      {n:7, desc:"Craft 5 explosive ammunition types", target:5},
+      {n:8, desc:"Pick and use 5 different plants as items", target:5},
+      {n:9, desc:"Craft every type of tonic and equipment in the game", target:null, tip:"Requires all recipes — buy from fences as you level up."},
+      {n:10, desc:"Complete all Survivalist Challenges", target:null, tip:"Reward: Survivalist Map"},
+    ]},
+  { id:"weapons", name:"Weapons Expert", icon:"⚔️", color:"#8090a0",
+    tasks:[
+      {n:1, desc:"Kill 3 enemies with a Bow without alerting nearby enemies", target:3},
+      {n:2, desc:"Kill 3 enemies with a shotgun", target:3},
+      {n:3, desc:"Kill 5 enemies using a knife", target:5, tip:"Stealth kill or melee — approach undetected for clean kills."},
+      {n:4, desc:"Kill 5 enemies with throwing knives", target:5},
+      {n:5, desc:"Kill 3 enemies with a pistol or revolver while in Dead Eye", target:3},
+      {n:6, desc:"Kill 3 enemies in a row with a repeater without reloading", target:null},
+      {n:7, desc:"Kill 3 enemies in a row with a rifle without reloading", target:null},
+      {n:8, desc:"Kill 2 enemies with one shotgun blast", target:null, tip:"Wait for 2 enemies to stand close together."},
+      {n:9, desc:"Kill 3 enemies with dynamite", target:3},
+      {n:10, desc:"Complete all Weapons Expert Challenges", target:null, tip:"Reward: Weapons Expert Holster"},
+    ]},
+];
+
+// ── TROPHIES ─────────────────────────────────────────────────────────────────
+const TROPHIES = [
+  {id:"t1",  name:"Back in the Mud",        tier:"B", cat:"story",  auto:true,  desc:"Complete Chapter 1."},
+  {id:"t2",  name:"Just a Scratch",         tier:"B", cat:"story",  auto:true,  desc:"Complete 'Enter, Pursued by a Memory'."},
+  {id:"t3",  name:"To Greener Pastures",    tier:"B", cat:"story",  auto:true,  desc:"Complete Chapter 2."},
+  {id:"t4",  name:"Settling Feuds",         tier:"B", cat:"story",  auto:true,  desc:"Complete Chapter 3."},
+  {id:"t5",  name:"Washed Ashore",          tier:"B", cat:"story",  auto:true,  desc:"Complete Chapter 4."},
+  {id:"t6",  name:"No Traitors",            tier:"B", cat:"story",  auto:true,  desc:"Complete Chapter 5."},
+  {id:"t7",  name:"Third Time Lucky",       tier:"B", cat:"story",  auto:true,  desc:"Complete 'Goodbye, Dear Friend'."},
+  {id:"t8",  name:"Redemption",             tier:"B", cat:"story",  auto:true,  desc:"Complete 'Red Dead Redemption'."},
+  {id:"t9",  name:"Cowboy Builder",         tier:"B", cat:"story",  auto:true,  desc:"Complete 'A New Jerusalem'. Unlocks in Epilogue."},
+  {id:"t10", name:"Endless Summer",         tier:"B", cat:"story",  auto:true,  desc:"Complete the Epilogue (Part II)."},
+  {id:"t11", name:"Lending a Hand",         tier:"S", cat:"offline", missable:true, desc:"Complete ALL optional Honor story missions. Reach Honor Level 4 by Chapter 6 for 'Do Not Seek Absolution'."},
+  {id:"t12", name:"Friends With Benefits",  tier:"S", cat:"offline", missable:true, desc:"Complete 1 Companion Activity in each camp: Chapter 2, 3, and 4."},
+  {id:"t13", name:"Give to the Poor",       tier:"S", cat:"offline", missable:true, desc:"Donate $250 to the tithing box. Gone after Chapter 4!"},
+  {id:"t14", name:"Errand Boy",             tier:"S", cat:"offline", missable:true, desc:"Deliver 5 camp companion item requests in Chapters 2–4."},
+  {id:"t15", name:"Gold Rush",              tier:"G", cat:"offline", desc:"Earn 70 Gold Medals in Story missions (104 total available)."},
+  {id:"t16", name:"Best in the West",       tier:"G", cat:"offline", desc:"Attain 100% completion."},
+  {id:"t17", name:"Hobby Horse",            tier:"B", cat:"offline", desc:"Play all mini games (Five Finger Fillet, Blackjack, Dominoes, Poker, Arm Wrestling, Mumblypeg, Horseshoes)."},
+  {id:"t18", name:"Breaking and Entering",  tier:"B", cat:"offline", desc:"Recover the stash from 4 homesteads. Do early in Chapters 2–3."},
+  {id:"t19", name:"Artificial Intelligence",tier:"B", cat:"offline", desc:"Discover the fate of Marko Dragic. Complete the stranger questline 'A Bright Bouncing Boy'. Wait 48 in-game hours."},
+  {id:"t20", name:"Take From the Rich",     tier:"B", cat:"offline", desc:"Rob or loot $250 from NPCs or players."},
+  {id:"t21", name:"Pony Up",               tier:"B", cat:"offline", desc:"Spend $5,000 across all shops. Gunsmiths are the fastest."},
+  {id:"t22", name:"Extreme Personality",    tier:"B", cat:"offline", desc:"Reach max (Level 8) OR min (Level 1) Honor. Fish & release + bounties = fastest honor gain."},
+  {id:"t23", name:"Western Stranger",       tier:"B", cat:"offline", desc:"Complete 10 Stranger mission strands (22 of 26 count)."},
+  {id:"t24", name:"Bountiful",              tier:"B", cat:"offline", desc:"Complete a Bounty Hunter mission in all 5 states. Only after Epilogue."},
+  {id:"t25", name:"Collector's Item",       tier:"B", cat:"offline", desc:"Complete one full Collectible strand (Rock Carvings, Bones, etc.). Fastest: Rock Carvings."},
+  {id:"t26", name:"Paying Respects",        tier:"B", cat:"offline", desc:"Find the graves of all 9 fallen companions. Only after completing the story."},
+  {id:"t27", name:"It's Art",              tier:"B", cat:"offline", desc:"Find a permanent home for the squirrel statue. Only possible after beating the story."},
+  {id:"t28", name:"Self Sufficient",        tier:"B", cat:"offline", desc:"Craft 30 unique items in Story Mode."},
+  {id:"t29", name:"Skin Deep",              tier:"B", cat:"offline", desc:"Skin every skinnable species (71 specific animals). See Animals section."},
+  {id:"t30", name:"Zoologist",              tier:"B", cat:"offline", desc:"Study every required animal species (141). Use binoculars (R1). See Animals section."},
+  {id:"t31", name:"It was THIS Big!",       tier:"B", cat:"offline", desc:"Catch a fish weighing at least 16 lbs. Use Special Lake Lure at Flat Iron Lake or Owanjila."},
+  {id:"t32", name:"Locked and Loaded",      tier:"B", cat:"offline", desc:"Fully upgrade all components of one weapon (scope, barrel, rifling, sights, etc.)."},
+  {id:"t33", name:"Grin and Bear it",       tier:"B", cat:"offline", desc:"Survive 3 bear attacks in a row. Go to north of Strawberry and let bears maul you — survive with health items."},
+  {id:"t34", name:"Trusty Steed",           tier:"B", cat:"offline", desc:"Reach Bonding Level 4 (max) with a horse. Groom, feed, and ride regularly."},
+  {id:"t35", name:"Breakout",              tier:"B", cat:"online", desc:"Complete the Online Intro. First online trophy — automatic after tutorial."},
+  {id:"t36", name:"Series Major",          tier:"B", cat:"online", desc:"Take part in a Series. Pause Menu → Online → Showdown Series / Race Series."},
+  {id:"t37", name:"Gun For Hire",          tier:"B", cat:"online", desc:"Accept 10 Free Roam missions. Blue icons on the online map."},
+  {id:"t38", name:"Eventful",             tier:"B", cat:"online", desc:"Play 5 Free Roam Events. Timed events that appear automatically on the map."},
+  {id:"t39", name:"Buckle Up",            tier:"B", cat:"online", desc:"Achieve 5 gold belt buckles from Awards. Track at Progress → Awards."},
+  {id:"t40", name:"The Real Deal",        tier:"S", cat:"online", desc:"Achieve MVP 3 times (4+ players). Win by getting highest kills/score in Showdown Series."},
+  {id:"t41", name:"Horses for Courses",   tier:"B", cat:"online", desc:"Concurrently own 5 horses. Buy 4 Kentucky Saddlers ($50 each) + use free stall slot. Total ~$1,700."},
+  {id:"t42", name:"Getting Started",      tier:"B", cat:"online", desc:"Reach Rank 10 Online."},
+  {id:"t43", name:"Notorious",            tier:"G", cat:"online", desc:"Reach Rank 50 Online. Need 175,300 XP. Use XP exploit (~7,000 XP/hour)."},
+  {id:"t44", name:"All's Fair",           tier:"B", cat:"online", desc:"Counter a rival Posse's Free Roam mission. Stay near train stations. Prevent enemies from completing their mission."},
+  {id:"t45", name:"Home Comforts",        tier:"B", cat:"online", desc:"Purchase 5 camp improvements. Buy 5 flag colors ($50 each = $250). Buy all 5 without leaving menu."},
+  {id:"t46", name:"Non-Regulation",       tier:"B", cat:"online", desc:"Craft 25 pieces of ammunition. Buy recipes from Fence, then craft at camp."},
+  {id:"t47", name:"Posse Up",             tier:"B", cat:"online", desc:"Form a Persistent Posse. Costs $200. Menu → Posse → Form → Type: Persistent."},
+  {id:"t48", name:"Master Craftsman",     tier:"B", cat:"online", desc:"Craft 20 items (excluding ammo). Cook meat at camp fire — each piece eaten counts as 2."},
+  {id:"t49", name:"Butchered",            tier:"B", cat:"online", desc:"Sell 20 items to the Butcher. Skin animals first for more sellable items."},
+  {id:"t50", name:"Picked to Perfection", tier:"B", cat:"online", desc:"Pick 25 Herbs (any plants count). Use Eagle Vision (L3+R3) to highlight them."},
+  {id:"t51", name:"Strength in Numbers",  tier:"B", cat:"online", desc:"Complete a Free Roam mission with a Posse of at least 2 members."},
+];
+
+// ── ANIMALS (same 178 as before) ──────────────────────────────────────────────
+const ANIMALS = [
+  {n:1,name:"American Alligator",s:1},{n:2,name:"American Alligator (Small)",s:1},
+  {n:3,name:"Nine-Banded Armadillo",s:1},{n:4,name:"American Badger",s:1},
+  {n:5,name:"Little Brown Bat"},{n:6,name:"American Black Bear",s:1},
+  {n:7,name:"Grizzly Bear",s:1},{n:8,name:"North American Beaver",s:1},
+  {n:9,name:"Blue Jay"},{n:10,name:"Wild Boar",s:1},
+  {n:11,name:"Whitetail Buck",s:1},{n:12,name:"Whitetail Deer",s:1},
+  {n:13,name:"American Bison",s:1},{n:14,name:"Angus Bull"},
+  {n:15,name:"Devon Bull"},{n:16,name:"Hereford Bull"},
+  {n:17,name:"American Bullfrog"},{n:18,name:"Northern Cardinal"},
+  {n:19,name:"American Domestic Cat"},{n:20,name:"Cedar Waxwing"},
+  {n:21,name:"Dominique Chicken"},{n:22,name:"Dominique Rooster"},
+  {n:23,name:"Java Chicken"},{n:24,name:"Java Rooster"},
+  {n:25,name:"Leghorn Chicken"},{n:26,name:"Leghorn Rooster"},
+  {n:27,name:"Greater Prairie Chicken",s:1},{n:28,name:"Western Chipmunk"},
+  {n:29,name:"Californian Condor"},{n:30,name:"Cougar",s:1},
+  {n:31,name:"Double-crested Cormorant"},{n:32,name:"Neotropic Cormorant"},
+  {n:33,name:"Florida Cracker Cow"},{n:34,name:"California Valley Coyote",s:1},
+  {n:35,name:"Cuban Land Crab"},{n:36,name:"Red Swamp Crayfish"},
+  {n:37,name:"Whooping Crane"},{n:38,name:"Sandhill Crane"},
+  {n:39,name:"American Crow"},
+  {n:40,name:"American Fox Hound",dog:1,x:1},{n:41,name:"Australian Shepherd",dog:1,x:1},
+  {n:42,name:"Bloodhound",dog:1,x:1},{n:43,name:"Bluetick Coonhound",dog:1,x:1},
+  {n:44,name:"Border Collie",dog:1,x:1},{n:45,name:"Catahoula Cur",dog:1,x:1},
+  {n:46,name:"Chesapeake Bay Retriever",dog:1,x:1},{n:47,name:"Siberian Husky",dog:1,x:1},
+  {n:48,name:"Labrador Retriever",dog:1,x:1},{n:49,name:"Poodle",dog:1,x:1},
+  {n:50,name:"Mutt",dog:1,x:1},{n:51,name:"Rufus (Epilogue)",dog:1,x:1},
+  {n:52,name:"Standard Donkey"},{n:53,name:"Mallard Duck",s:1},
+  {n:54,name:"Pekin Duck",s:1},{n:55,name:"Bald Eagle"},
+  {n:56,name:"Golden Eagle"},{n:57,name:"Reddish Egret",s:1},
+  {n:58,name:"Little Egret",s:1},{n:59,name:"Snowy Egret",s:1},
+  {n:60,name:"Rocky Mountain Bull Elk",s:1},{n:61,name:"Rocky Mountain Cow Elk",s:1},
+  {n:62,name:"American Red Fox",s:1},{n:63,name:"American Gray Fox",s:1},
+  {n:64,name:"Silver Fox",s:1},{n:65,name:"Banded Gila Monster",s:1},
+  {n:66,name:"Alpine Goat"},{n:67,name:"Canada Goose",s:1},
+  {n:68,name:"Ferruginous Hawk"},{n:69,name:"Red-tailed Hawk"},
+  {n:70,name:"Rough-legged Hawk"},{n:71,name:"Great Blue Heron",s:1},
+  {n:72,name:"Tricolored Heron",s:1},{n:73,name:"Desert Iguana",s:1},
+  {n:74,name:"Green Iguana",s:1},{n:75,name:"Collared Peccary",s:1},
+  {n:76,name:"Common Loon",s:1},{n:77,name:"Pacific Loon",s:1},
+  {n:78,name:"Yellow-billed Loon",s:1},{n:79,name:"Western Bull Moose",s:1},
+  {n:80,name:"Western Moose",s:1},{n:81,name:"Mule"},
+  {n:82,name:"American Muskrat",s:1},{n:83,name:"Baltimore Oriole"},
+  {n:84,name:"Hooded Oriole"},{n:85,name:"Californian Horned Owl"},
+  {n:86,name:"Coastal Horned Owl"},{n:87,name:"Great Horned Owl"},
+  {n:88,name:"Angus Ox"},{n:89,name:"Devon Ox"},
+  {n:90,name:"Panther",s:1},{n:91,name:"Florida Panther",s:1},
+  {n:92,name:"Carolina Parakeet",x:1},
+  {n:93,name:"Blue & Yellow Macaw",g:1,x:1},{n:94,name:"Great Green Macaw",g:1,x:1},
+  {n:95,name:"Scarlet Macaw",g:1,x:1},
+  {n:96,name:"American White Pelican"},{n:97,name:"Brown Pelican"},
+  {n:98,name:"Ring-necked Pheasant",s:1},{n:99,name:"Chinese Ring-necked Pheasant",s:1},
+  {n:100,name:"Berkshire Pig"},{n:101,name:"Big China Pig"},
+  {n:102,name:"Old Spot Pig"},{n:103,name:"Band-tailed Pigeon"},
+  {n:104,name:"Rock Pigeon"},{n:105,name:"Virginia Opossum",s:1},
+  {n:106,name:"American Pronghorn Buck",s:1},{n:107,name:"American Pronghorn Doe",s:1},
+  {n:108,name:"Sonoran Pronghorn Buck",s:1},{n:109,name:"Sonoran Pronghorn Doe",s:1},
+  {n:110,name:"Baja California Pronghorn Buck",s:1},{n:111,name:"Baja California Pronghorn Doe",s:1},
+  {n:112,name:"California Quail"},{n:113,name:"Sierra Nevada Bighorn Ram",s:1},
+  {n:114,name:"Sierra Nevada Bighorn Sheep",s:1},{n:115,name:"Desert Bighorn Ram",s:1},
+  {n:116,name:"Desert Bighorn Sheep",s:1},{n:117,name:"Rocky Mountain Bighorn Ram",s:1},
+  {n:118,name:"Rocky Mountain Bighorn Sheep",s:1},{n:119,name:"Black-tailed Jackrabbit",s:1},
+  {n:120,name:"North American Raccoon",s:1},{n:121,name:"Black Rat"},
+  {n:122,name:"Brown Rat"},{n:123,name:"Western Raven"},
+  {n:124,name:"Red-footed Booby",g:1,x:1},{n:125,name:"American Robin"},
+  {n:126,name:"Roseate Spoonbill",s:1},{n:127,name:"Herring Gull"},
+  {n:128,name:"Laughing Gull"},{n:129,name:"Ring-billed Gull"},
+  {n:130,name:"Merino Sheep"},{n:131,name:"Striped Skunk",s:1},
+  {n:132,name:"Red Boa Snake",g:1,x:1},{n:133,name:"Rainbow Boa Snake",g:1,x:1},
+  {n:134,name:"Sunglow Boa Snake",g:1,x:1},{n:135,name:"Diamondback Rattlesnake",s:1},
+  {n:136,name:"Fer-de-Lance Snake",g:1,x:1},{n:137,name:"Black-tailed Rattlesnake",s:1},
+  {n:138,name:"Timber Rattlesnake",s:1},{n:139,name:"Northern Copperhead Snake",s:1},
+  {n:140,name:"Southern Copperhead Snake",s:1},{n:141,name:"Midland Water Snake",s:1},
+  {n:142,name:"Cottonmouth Snake",s:1},{n:143,name:"Northern Water Snake",s:1},
+  {n:144,name:"Scarlet Tanager Songbird"},{n:145,name:"Western Tanager Songbird"},
+  {n:146,name:"Eurasian Tree Sparrow"},{n:147,name:"American Tree Sparrow"},
+  {n:148,name:"Golden Crowned Sparrow"},{n:149,name:"American Red Squirrel"},
+  {n:150,name:"Western Gray Squirrel"},{n:151,name:"Black Squirrel"},
+  {n:152,name:"Western Toad"},{n:153,name:"Sonoran Desert Toad"},
+  {n:154,name:"Eastern Wild Turkey",s:1},{n:155,name:"Rio Grande Wild Turkey",s:1},
+  {n:156,name:"Alligator Snapping Turtle",s:1},{n:157,name:"Eastern Turkey Vulture"},
+  {n:158,name:"Western Turkey Vulture"},{n:159,name:"Gray Wolf",s:1},
+  {n:160,name:"Timber Wolf",s:1},{n:161,name:"Red-bellied Woodpecker"},
+  {n:162,name:"Pileated Woodpecker"},
+  {n:163,name:"Legendary Bull Gator",lg:1,x:1},{n:164,name:"Legendary Bharati Grizzly Bear",lg:1,x:1},
+  {n:165,name:"Legendary Beaver",lg:1,x:1},{n:166,name:"Legendary White Bison",lg:1,x:1},
+  {n:167,name:"Legendary Tatanka Bison",lg:1,x:1},{n:168,name:"Legendary Boar",lg:1,x:1},
+  {n:169,name:"Legendary Buck",lg:1,x:1},{n:170,name:"Legendary Cougar",lg:1,x:1},
+  {n:171,name:"Legendary Coyote",lg:1,x:1},{n:172,name:"Legendary Fox",lg:1,x:1},
+  {n:173,name:"Legendary Elk",lg:1,x:1},{n:174,name:"Legendary Moose",lg:1,x:1},
+  {n:175,name:"Legendary Giaguaro Panther",lg:1,x:1},{n:176,name:"Legendary Pronghorn",lg:1,x:1},
+  {n:177,name:"Legendary Big Horn Ram",lg:1,x:1},{n:178,name:"Legendary Wolf",lg:1,x:1},
+];
+
+const STORY_CHAPTERS = [
+  {id:"ch1",name:"Chapter 1 — Colter",         icon:"❄️",  desc:"4 missions · Automatic trophy: Back in the Mud"},
+  {id:"ch2",name:"Chapter 2 — Horseshoe Overlook",icon:"⛺",desc:"18 missions · Missable: Lending a Hand, Friends With Benefits, Give to the Poor, Errand Boy"},
+  {id:"ch3",name:"Chapter 3 — Clemens Point",   icon:"🌊",  desc:"13 missions · Continue missable trophies"},
+  {id:"ch4",name:"Chapter 4 — Shady Belle",     icon:"🏚️", desc:"13 missions · Last chance for missable trophies"},
+  {id:"ch5",name:"Chapter 5 — Guarma Island",   icon:"🌴",  desc:"9 missions · Guarma animals available here (not required for trophies)"},
+  {id:"ch6",name:"Chapter 6 — Beaver Hollow",   icon:"🏔️", desc:"19 missions · 'Do Not Seek Absolution' needs Honor Level 4"},
+  {id:"ep1",name:"Epilogue Part I",              icon:"🌅",  desc:"13 missions · Cowboy Builder trophy"},
+  {id:"ep2",name:"Epilogue Part II",             icon:"🌄",  desc:"17 missions · Endless Summer trophy · Platinum cleanup begins"},
+];
+
+const MINIGAMES = [
+  {id:"mg1",name:"Five Finger Fillet",  icon:"✋", loc:"Flatneck Station / Strawberry / Emerald Ranch"},
+  {id:"mg2",name:"Blackjack",           icon:"🃏", loc:"Rhodes Saloon"},
+  {id:"mg3",name:"Dominoes",            icon:"🎱", loc:"Saint Denis Park"},
+  {id:"mg4",name:"Poker",               icon:"♠️", loc:"Saint Denis Saloon / Various"},
+  {id:"mg5",name:"Arm Wrestling",       icon:"💪", loc:"Various towns (Valentine, etc.)"},
+  {id:"mg6",name:"Mumblypeg",           icon:"🗡️", loc:"Various camps"},
+  {id:"mg7",name:"Horseshoes",          icon:"🧲", loc:"Various camps / homesteads"},
+];
+
+const STRANGERS = [
+  {id:"st1",  name:"The Noblest of Men, and a Woman",      icon:"🤠", desc:"Hunt down 4 legendary gunslingers. Starts in Valentine (barman)."},
+  {id:"st2",  name:"A Bright Bouncing Boy",                icon:"🤖", desc:"Help Marko Dragic — unlocks Artificial Intelligence trophy."},
+  {id:"st3",  name:"The Smell of the Grease Paint",        icon:"🎪", desc:"Help the travelling theater troupe across multiple locations."},
+  {id:"st4",  name:"The Iniquities of History",            icon:"📜", desc:"Help the Confederate historian in Lemoyne."},
+  {id:"st5",  name:"The Mercies of Knowledge",             icon:"🔬", desc:"Help the temperance man near Emerald Ranch."},
+  {id:"st6",  name:"Of Men and Angels",                    icon:"⛪", desc:"Help the nun in Rhodes."},
+  {id:"st7",  name:"Do Not Seek Absolution",               icon:"⚖️", desc:"Requires Honor Level 4. Chapter 6 optional mission — needed for Lending a Hand."},
+  {id:"st8",  name:"The Veteran",                          icon:"🎖️", desc:"Help the Civil War veteran north of Flat Iron Lake."},
+  {id:"st9",  name:"Idealism and Pragmatism for Beginners",icon:"🏛️", desc:"Help the politician in Saint Denis (Clemens Fain)."},
+  {id:"st10", name:"The American Dream",                   icon:"🇺🇸", desc:"Help the Italian immigrants in Emerald Ranch."},
+  {id:"st11", name:"Duchesses and Other Animals",          icon:"🦜", desc:"Collect exotic animals and plants for the collector in Saint Denis."},
+  {id:"st12", name:"He's British, Of Course",              icon:"🐘", desc:"Help the British animal trainer near Emerald Ranch."},
+  {id:"st13", name:"A Fisher of Men",                      icon:"🎣", desc:"Take Jack fishing (story-related, missable in Chapter 2)."},
+  {id:"st14", name:"American Distillation",                icon:"🥃", desc:"Help the moonshiner in Bluewater Marsh."},
+  {id:"st15", name:"The Widow of Willard's Rest",          icon:"⚰️", desc:"Help the widow and her strange guests in the woods."},
+  {id:"st16", name:"Geology for Beginners",                icon:"🪨", desc:"Find all 10 Rock Carvings for Francis Sinclair."},
+  {id:"st17", name:"All That Glitters",                    icon:"💰", desc:"Complete the Treasure Hunter stranger missions."},
+  {id:"st18", name:"The Colm O'Driscoll Gang",             icon:"🔫", desc:"Various encounters with the O'Driscoll gang."},
+  {id:"st19", name:"The Haunted Homestead",                icon:"👻", desc:"Investigate the ghost town and strange events."},
+  {id:"st20", name:"Oh, Brother",                          icon:"🤼", desc:"Help the Calloway brothers in Valentine."},
+  {id:"st21", name:"A Fine Night For It",                  icon:"🌙", desc:"Meet the strange man on the road at night (multiple encounters)."},
+  {id:"st22", name:"Arcadia for Amateurs",                 icon:"🎨", desc:"Help the writer writing his book about the West."},
+];
+
+const COLLECTIBLES = [
+  {id:"col1",  name:"Rock Carvings",         icon:"🪨", total:10, desc:"Needed for 100% and Explorer Challenges. Found on cliffs."},
+  {id:"col2",  name:"Dinosaur Bones",        icon:"🦕", total:30, desc:"Found across New Austin and beyond. Needed for 100%."},
+  {id:"col3",  name:"Dream Catchers",        icon:"🌀", total:20, desc:"Hanging in trees. Needed for 100%."},
+  {id:"col4",  name:"Graves (Companions)",   icon:"⚰️", total:9,  desc:"Needed for Paying Respects trophy. All after story."},
+  {id:"col5",  name:"Arrowheads",            icon:"🏹", total:20, desc:"On the ground near rivers. Needed for 100%."},
+  {id:"col6",  name:"Cigarette Cards",       icon:"🚬", total:144,desc:"Collected from cigarette packs + found in the world."},
+  {id:"col7",  name:"Legendary Fish",        icon:"🐟", total:13, desc:"Catch all 13 for It was THIS Big trophy (one unlocks). Needed for 100%."},
+  {id:"col8",  name:"Exotics (Algernon)",    icon:"🦋", total:5,  desc:"Rare animal parts for the collector in Saint Denis."},
+  {id:"col9",  name:"Hunting Requests",      icon:"📦", total:9,  desc:"Mail animal carcasses from train stations. Needed for Master Hunter."},
+  {id:"col10", name:"Treasure Maps",         icon:"🗺️", total:9,  desc:"Find and solve all treasure maps for Explorer challenges."},
+];
+
+// ── ONLINE TROPHIES (same as trophies t35-t51) ────────────────────────────────
+const ONLINE = TROPHIES.filter(t => t.cat === "online");
+
+// ═══════════════════════════════════════════════ INIT STATE
+function initState(){
+  CHALLENGES.forEach(cat => {
+    cat.tasks.forEach(t => {
+      if(S[`ch_${cat.id}_${t.n}_done`] === undefined) S[`ch_${cat.id}_${t.n}_done`] = false;
+      if(t.target && S[`ch_${cat.id}_${t.n}_val`] === undefined) S[`ch_${cat.id}_${t.n}_val`] = 0;
+    });
+  });
+  TROPHIES.forEach(t => { if(S[t.id]===undefined) S[t.id]=false; });
+  ANIMALS.forEach(a => { if(!S[`a_${a.n}`]) S[`a_${a.n}`]={st:false,sk:false}; });
+  STORY_CHAPTERS.forEach(c => { if(S[c.id]===undefined) S[c.id]=false; });
+  MINIGAMES.forEach(m => { if(S[m.id]===undefined) S[m.id]=false; });
+  STRANGERS.forEach(s => { if(S[s.id]===undefined) S[s.id]=false; });
+  COLLECTIBLES.forEach(c => { if(S[`coll_${c.id}`]===undefined) S[`coll_${c.id}`]=0; });
+  if(S.goldmedals===undefined) S.goldmedals=0;
+}
+initState();
+
+// ═══════════════════════════════════════════════ NAV
+document.querySelectorAll(".nav-item[data-sec]").forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    el.classList.add("active");
+    document.getElementById("sec-"+el.dataset.sec).classList.add("active");
+  };
+});
+
+// ═══════════════════════════════════════════════ HELPERS
+function mkChk(done, color, onclick){
+  const b = document.createElement("div");
+  b.className = "chk"+(done?" done":"");
+  b.style.setProperty("--c", color||"var(--gold)");
+  b.textContent = done?"✓":"";
+  b.onclick = onclick;
+  return b;
+}
+function mkBdg(label,color){
+  const b=document.createElement("span");
+  b.className="bdg";
+  b.style.cssText=`background:${color}18;border:1px solid ${color}40;color:${color}`;
+  b.textContent=label;
+  return b;
+}
+function tierColor(t){ return t==="G"?"#d4b020":t==="S"?"#b0b0b0":t==="B"?"#c07040":"#e8c87a"; }
+function tierIcon(t){ return t==="G"?"🥇":t==="S"?"🥈":"🥉"; }
+
+// ═══════════════════════════════════════════════ CHALLENGE RENDER
+function renderChallenges(){
+  const list = document.getElementById("challenge-list");
+  list.innerHTML = "";
+  CHALLENGES.forEach(cat => {
+    const catDone = cat.tasks.filter(t => S[`ch_${cat.id}_${t.n}_done`]).length;
+    const catTotal = cat.tasks.length;
+    const pct = Math.round(catDone/catTotal*100);
+    const isOpen = S[`ch_open_${cat.id}`] || false;
+
+    const el = document.createElement("div");
+    el.className = "ch-cat"+(isOpen?" open":"");
+    el.id = "chcat-"+cat.id;
+
+    el.innerHTML = `
+      <div class="ch-cat-header" onclick="toggleCat('${cat.id}')">
+        <div class="ch-cat-icon">${cat.icon}</div>
+        <div class="ch-cat-name">${cat.name}</div>
+        <div class="ch-cat-prog" style="color:${pct===100?cat.color:"var(--muted)"}">${catDone}/${catTotal}</div>
+        <div style="width:80px;background:rgba(0,0,0,.4);border-radius:3px;height:4px;overflow:hidden;margin:0 8px">
+          <div style="height:100%;width:${pct}%;background:${cat.color};border-radius:3px;transition:width .3s"></div>
+        </div>
+        <div class="ch-cat-arrow">▼</div>
+      </div>
+      <div class="ch-tasks" id="chtasks-${cat.id}"></div>
+    `;
+    list.appendChild(el);
+
+    const tasksEl = el.querySelector(`#chtasks-${cat.id}`);
+    cat.tasks.forEach(t => {
+      const done = !!S[`ch_${cat.id}_${t.n}_done`];
+      const cur = t.target ? (S[`ch_${cat.id}_${t.n}_val`]||0) : null;
+      const row = document.createElement("div");
+      row.className = "task-row"+(done?" done":"");
+      row.onclick = (e) => {
+        if(e.target.closest(".counter")) return;
+        S[`ch_${cat.id}_${t.n}_done`] = !done;
+        if(t.target && !done) S[`ch_${cat.id}_${t.n}_val`] = t.target;
+        save(); renderChallenges(); updateAll();
+      };
+
+      const numEl = document.createElement("div");
+      numEl.className = "task-num";
+      numEl.textContent = t.n;
+
+      const descEl = document.createElement("div");
+      descEl.className = "task-desc";
+      descEl.innerHTML = t.desc + (t.tip?`<span class="tip">💡 ${t.tip}</span>`:"");
+
+      const rightEl = document.createElement("div");
+      rightEl.className = "task-right";
+
+      if(t.target && !done){
+        const ctr = document.createElement("div");
+        ctr.className = "counter";
+        const btnM = document.createElement("button");
+        btnM.className="ctr-btn"; btnM.textContent="−";
+        btnM.onclick=(e)=>{ e.stopPropagation(); adjTask(cat.id,t.n,t.target,-1); };
+        const val = document.createElement("div");
+        val.className="ctr-val"+(cur>=t.target?" done":"");
+        val.textContent=`${cur}/${t.target}`;
+        const btnP = document.createElement("button");
+        btnP.className="ctr-btn"; btnP.textContent="+";
+        btnP.onclick=(e)=>{ e.stopPropagation(); adjTask(cat.id,t.n,t.target,1); };
+        ctr.append(btnM,val,btnP);
+        rightEl.appendChild(ctr);
+      }
+
+      const chk = mkChk(done, cat.color, (e)=>{
+        e.stopPropagation();
+        S[`ch_${cat.id}_${t.n}_done`] = !done;
+        if(t.target && !done) S[`ch_${cat.id}_${t.n}_val`] = t.target;
+        save(); renderChallenges(); updateAll();
+      });
+      rightEl.appendChild(chk);
+      row.append(numEl, descEl, rightEl);
+      tasksEl.appendChild(row);
+    });
+
+    if(isOpen) el.querySelector(".ch-tasks").style.display="block";
+  });
+}
+
+function toggleCat(id){
+  S[`ch_open_${id}`] = !S[`ch_open_${id}`];
+  save();
+  const el = document.getElementById("chcat-"+id);
+  el.classList.toggle("open");
+}
+
+function adjTask(catId,n,target,delta){
+  const key = `ch_${catId}_${n}_val`;
+  const cur = S[key]||0;
+  S[key] = Math.max(0, Math.min(target, cur+delta));
+  if(S[key] >= target) S[`ch_${catId}_${n}_done`] = true;
+  save(); renderChallenges(); updateAll();
+}
+
+// ═══════════════════════════════════════════════ TROPHY RENDER
+let trFilter = "all";
+function renderTrophies(){
+  const q = document.getElementById("tr-search").value.toLowerCase();
+  const list = document.getElementById("trophy-list");
+  list.innerHTML="";
+  const filtered = TROPHIES.filter(t => {
+    if(q && !t.name.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+    if(trFilter==="offline") return t.cat!=="online";
+    if(trFilter==="online") return t.cat==="online";
+    if(trFilter==="missable") return !!t.missable;
+    if(trFilter==="undone") return !S[t.id];
+    return true;
+  });
+
+  let lastCat="";
+  filtered.forEach(t => {
+    const cat = t.cat==="online"?"online":t.missable?"missable":t.cat==="story"?"story":"offline";
+    if(cat!==lastCat && trFilter==="all"){
+      const h=document.createElement("div"); h.className="subhdr";
+      const labels={story:"📖 Story (Auto-Unlock)",missable:"⚠️ Missable — Do Not Skip!",offline:"🎯 Offline Miscellaneous",online:"🌐 Online"};
+      h.textContent=labels[cat]||cat; list.appendChild(h); lastCat=cat;
+    }
+    const done=!!S[t.id];
+    const row=document.createElement("div");
+    row.className="tr-row"+(done?" done":"")+(t.missable?" missable":"");
+    row.onclick=()=>{ S[t.id]=!done; save(); renderTrophies(); updateAll(); };
+
+    const icon=document.createElement("div"); icon.className="tr-icon"; icon.textContent=tierIcon(t.tier);
+    const body=document.createElement("div"); body.className="tr-body";
+    const nm=document.createElement("div"); nm.className="tr-name"+(done?" done":"");
+    nm.style.color=done?"var(--gold2)":"var(--text)";
+    const sp=document.createElement("span"); sp.style.fontWeight="bold"; sp.textContent=t.name+(done?" ✦":""); nm.appendChild(sp);
+    const tc=tierColor(t.tier);
+    nm.appendChild(mkBdg(t.tier==="G"?"Gold":t.tier==="S"?"Silver":"Bronze",tc));
+    if(t.auto) nm.appendChild(mkBdg("Auto","#508050"));
+    if(t.missable) nm.appendChild(mkBdg("⚠ MISSABLE","#c04040"));
+    if(t.cat==="online") nm.appendChild(mkBdg("Online","#5ba3d0"));
+    const dc=document.createElement("div"); dc.className="tr-desc"; dc.textContent=t.desc;
+    body.append(nm,dc);
+    const chk=mkChk(done,tc,(e)=>{ e.stopPropagation(); S[t.id]=!done; save(); renderTrophies(); updateAll(); });
+    row.append(icon,body,chk);
+    list.appendChild(row);
+  });
+}
+// Filter buttons for trophies
+(function(){
+  const row=document.getElementById("tr-filters");
+  [["all","All"],["story","Story"],["offline","Offline"],["missable","⚠ Missable"],["online","Online"],["undone","Undone"]].forEach(([id,lbl])=>{
+    const b=document.createElement("button"); b.className="tag-btn"+(id==="all"?" on":""); b.textContent=lbl;
+    b.onclick=()=>{ trFilter=id; document.querySelectorAll("#tr-filters .tag-btn").forEach(x=>x.classList.remove("on")); b.classList.add("on"); renderTrophies(); };
+    row.appendChild(b);
+  });
+})();
+
+// ═══════════════════════════════════════════════ ANIMALS RENDER
+let anFilter="all";
+function renderAnimals(){
+  const q=(document.getElementById("an-search")||{value:""}).value.toLowerCase();
+  const list=document.getElementById("animal-list");
+  list.innerHTML="";
+  ANIMALS.filter(a=>{
+    if(q && !a.name.toLowerCase().includes(q)) return false;
+    if(anFilter==="required") return !a.x;
+    if(anFilter==="skinnable") return !!a.s;
+    if(anFilter==="guarma") return !!a.g;
+    if(anFilter==="legendary") return !!a.lg;
+    if(anFilter==="dog") return !!a.dog;
+    if(anFilter==="undone") return !S[`a_${a.n}`]?.st || (a.s && !S[`a_${a.n}`]?.sk);
+    return true;
+  }).forEach((a,i)=>{
+    const d=S[`a_${a.n}`]||{st:false,sk:false};
+    const fullyDone=d.st&&(!a.s||d.sk);
+    const row=document.createElement("div");
+    row.className="an-row"+(a.x?" faded":fullyDone&&!a.x?" done":i%2===0?" ":"");
+
+    const num=document.createElement("div"); num.className="an-num"; num.textContent="#"+a.n;
+    const nm=document.createElement("div"); nm.className="an-name"+(a.x?" italic":"");
+    nm.style.color=a.x?"var(--muted)":fullyDone?"var(--gold2)":"var(--text)";
+    nm.textContent=a.name;
+
+    const stCell=document.createElement("div"); stCell.className="an-cell";
+    stCell.appendChild(mkChk(d.st,"var(--blue)",()=>{ S[`a_${a.n}`]={...d,st:!d.st}; save(); renderAnimals(); updateAll(); }));
+
+    const skCell=document.createElement("div"); skCell.className="an-cell";
+    if(a.s){
+      skCell.appendChild(mkChk(d.sk,"var(--amber)",()=>{ S[`a_${a.n}`]={...d,sk:!d.sk}; save(); renderAnimals(); updateAll(); }));
+    } else {
+      skCell.innerHTML='<span style="font-size:10px;color:var(--dim)">—</span>';
+    }
+    row.append(num,nm,stCell,skCell);
+    list.appendChild(row);
+  });
+}
+// Animal filter buttons
+(function(){
+  const row=document.getElementById("an-filters");
+  [["all","All"],["required","Required"],["skinnable","Skinnable (71)"],["guarma","Guarma"],["legendary","Legendary"],["dog","Dogs"],["undone","Undone"]].forEach(([id,lbl])=>{
+    const b=document.createElement("button"); b.className="tag-btn"+(id==="all"?" on":""); b.textContent=lbl;
+    b.onclick=()=>{ anFilter=id; document.querySelectorAll("#an-filters .tag-btn").forEach(x=>x.classList.remove("on")); b.classList.add("on"); renderAnimals(); };
+    row.appendChild(b);
+  });
+})();
+
+// ═══════════════════════════════════════════════ STORY RENDER
+function renderStory(){
+  const list=document.getElementById("story-list");
+  list.innerHTML="";
+  STORY_CHAPTERS.forEach(c=>{
+    const done=!!S[c.id];
+    const el=document.createElement("div");
+    el.className="ch-item"+(done?" done":"");
+    el.onclick=()=>{ S[c.id]=!done; save(); renderStory(); updateAll(); };
+    el.innerHTML=`<div class="ci-icon">${c.icon}</div><div style="flex:1"><div class="ci-name">${c.name}${done?" ✦":""}</div><div class="ci-detail">${c.desc}</div></div>`;
+    el.appendChild(mkChk(done,"#6a9060"));
+    list.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════ MINIGAMES
+function renderMinigames(){
+  const list=document.getElementById("mg-list");
+  list.innerHTML="";
+  MINIGAMES.forEach(m=>{
+    const done=!!S[m.id];
+    const el=document.createElement("div");
+    el.className="mg-item"+(done?" done":"");
+    el.onclick=()=>{ S[m.id]=!done; save(); renderMinigames(); updateAll(); };
+    el.innerHTML=`<div class="mg-icon">${m.icon}</div><div><div class="mg-name">${m.name}</div><div class="mg-loc">${m.loc}</div></div>`;
+    const chk=mkChk(done,"var(--gold)"); chk.classList.add("mg-chk"); el.appendChild(chk);
+    list.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════ STRANGERS
+function renderStrangers(){
+  const list=document.getElementById("strangers-list");
+  list.innerHTML="";
+  const done10=STRANGERS.filter(s=>S[s.id]).length;
+  const info=document.createElement("div");
+  info.style.cssText="background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:var(--muted)";
+  info.innerHTML=`<strong style="color:var(--text)">Progress: ${done10}/22 completed · Need 10 for trophy</strong><br/>Complete 10+ stranger mission strands for the <strong>Western Stranger</strong> trophy. 22 of 26 strands count.`;
+  list.appendChild(info);
+  STRANGERS.forEach(s=>{
+    const done=!!S[s.id];
+    const row=document.createElement("div");
+    row.className="ol-row"+(done?" done":"");
+    row.onclick=()=>{ S[s.id]=!done; save(); renderStrangers(); updateAll(); };
+    row.innerHTML=`<div class="ol-icon">${s.icon}</div><div class="ol-body"><div class="ol-name${done?" done":""}">${s.name}${done?" ✦":""}</div><div class="ol-desc">${s.desc}</div></div>`;
+    row.appendChild(mkChk(done,"var(--gold)"));
+    list.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════ ONLINE
+function renderOnline(){
+  const list=document.getElementById("online-list");
+  list.innerHTML="";
+  ONLINE.forEach(t=>{
+    const done=!!S[t.id];
+    const row=document.createElement("div");
+    row.className="ol-row"+(done?" done":"");
+    row.onclick=()=>{ S[t.id]=!done; save(); renderOnline(); updateAll(); };
+    const tc=tierColor(t.tier);
+    row.innerHTML=`<div class="ol-icon">${tierIcon(t.tier)}</div><div class="ol-body"><div class="ol-name${done?" done":""}" style="color:${done?"var(--blue)":"var(--text)"}">${t.name}${done?" ✦":""}</div><div class="ol-desc">${t.desc}</div></div>`;
+    row.appendChild(mkChk(done,tc));
+    list.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════ COLLECTIBLES
+function renderCollectibles(){
+  const list=document.getElementById("coll-list");
+  list.innerHTML="";
+  COLLECTIBLES.forEach(c=>{
+    const cur=S[`coll_${c.id}`]||0;
+    const pct=Math.round(cur/c.total*100);
+    const el=document.createElement("div");
+    el.className="coll-item";
+    el.innerHTML=`
+      <div class="coll-top">
+        <div class="coll-icon">${c.icon}</div>
+        <div class="coll-name">${c.name}</div>
+        <div class="coll-nums">${cur}/${c.total}</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${c.desc}</div>
+      <div class="prog-bar-bg" style="margin-bottom:8px"><div class="prog-bar-fg" style="background:linear-gradient(90deg,var(--gold2)60,var(--gold));width:${pct}%"></div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="bc-btn" onclick="adjColl('${c.id}',-10,${c.total})" style="padding:4px 8px;font-size:10px">−10</button>
+        <button class="bc-btn" onclick="adjColl('${c.id}',-1,${c.total})" style="padding:4px 8px;font-size:10px">−1</button>
+        <input type="number" min="0" max="${c.total}" value="${cur}" style="width:60px;background:rgba(0,0,0,.4);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-size:12px;text-align:center;padding:4px;font-family:inherit;outline:none"
+          oninput="setColl('${c.id}',this.value,${c.total})"/>
+        <button class="bc-btn" onclick="adjColl('${c.id}',1,${c.total})" style="padding:4px 8px;font-size:10px">+1</button>
+        <button class="bc-btn" onclick="adjColl('${c.id}',10,${c.total})" style="padding:4px 8px;font-size:10px">+10</button>
+        ${pct===100?'<span style="color:var(--gold);font-size:11px;margin-left:4px">✦ COMPLETE</span>':`<span style="color:var(--dim);font-size:10px;margin-left:4px">${pct}%</span>`}
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+function adjColl(id,d,max){ S[`coll_${id}`]=Math.max(0,Math.min(max,(S[`coll_${id}`]||0)+d)); save(); renderCollectibles(); }
+function setColl(id,v,max){ S[`coll_${id}`]=Math.max(0,Math.min(max,parseInt(v)||0)); save(); updateAll(); }
+
+// ═══════════════════════════════════════════════ GOLD MEDALS COUNTER
+function adjCounter(type, delta){
+  const max = type==="goldmedals" ? 104 : 999;
+  S[type] = Math.max(0, Math.min(max, (S[type]||0)+delta));
+  document.getElementById(`${type.replace("goldmedals","gm")}-input`||"gm-input").value = S[type];
+  save(); updateGold(); updateAll();
+}
+function setCounter(type, val){
+  S[type] = Math.max(0, Math.min(104, parseInt(val)||0));
+  save(); updateGold(); updateAll();
+}
+function updateGold(){
+  const v=S.goldmedals||0;
+  const pct=Math.round(v/70*100);
+  document.getElementById("gm-nums").textContent=`${v} / 70 needed (${v}/104 total)`;
+  document.getElementById("gm-bar").style.width=Math.min(100,pct)+"%";
+  document.getElementById("gm-input").value=v;
+}
+
+// ═══════════════════════════════════════════════ UPDATE ALL / DASHBOARD
+function updateAll(){
+  // Trophies
+  const trDone=TROPHIES.filter(t=>S[t.id]).length;
+  const trPct=Math.round(trDone/52*100);
+  document.getElementById("nav-trophies").textContent=`${trDone}/52`;
+
+  // Challenges
+  let chDone=0;
+  CHALLENGES.forEach(cat=>cat.tasks.forEach(t=>{ if(S[`ch_${cat.id}_${t.n}_done`]) chDone++; }));
+  document.getElementById("nav-challenges").textContent=`${chDone}/90`;
+
+  // Animals
+  const anStudied=ANIMALS.filter(a=>!a.x&&S[`a_${a.n}`]?.st).length;
+  const anSkinned=ANIMALS.filter(a=>a.s&&S[`a_${a.n}`]?.sk).length;
+  document.getElementById("nav-animals").textContent=`${anStudied}/141`;
+
+  // Gold
+  updateGold();
+  const gmDone=Math.min(S.goldmedals||0,70);
+  document.getElementById("nav-goldmedals").textContent=`${gmDone}/70`;
+
+  // Story
+  const stDone=STORY_CHAPTERS.filter(c=>S[c.id]).length;
+  document.getElementById("nav-story").textContent=`${stDone}/8`;
+
+  // Mini Games
+  const mgDone=MINIGAMES.filter(m=>S[m.id]).length;
+  document.getElementById("nav-minigames").textContent=`${mgDone}/7`;
+
+  // Strangers
+  const stsDone=STRANGERS.filter(s=>S[s.id]).length;
+  document.getElementById("nav-strangers").textContent=`${stsDone}/10`;
+
+  // Online
+  const olDone=ONLINE.filter(t=>S[t.id]).length;
+  document.getElementById("nav-online").textContent=`${olDone}/18`;
+
+  // Collectibles nav
+  const collTot=COLLECTIBLES.reduce((a,c)=>a+(S[`coll_${c.id}`]||0),0);
+  const collMax=COLLECTIBLES.reduce((a,c)=>a+c.total,0);
+  document.getElementById("nav-collectibles").textContent=`${collTot}/${collMax}`;
+
+  // Overall platinum
+  document.getElementById("oc-pct").textContent=trPct+"%";
+  document.getElementById("oc-fill").style.width=trPct+"%";
+  document.getElementById("oc-sub").textContent=`${trDone} of 52 trophies completed`;
+  document.getElementById("nav-dashboard").textContent=trPct+"%";
+
+  // Dashboard cards
+  const DASH=[
+    {sec:"trophies",   icon:"🏆",name:"Trophies",   cur:trDone,   tot:52,   color:"#e8c87a"},
+    {sec:"story",      icon:"📖",name:"Story",       cur:stDone,   tot:8,    color:"#6a9060"},
+    {sec:"challenges", icon:"🎯",name:"Challenges",  cur:chDone,   tot:90,   color:"#c07040"},
+    {sec:"animals",    icon:"🐾",name:"Animals (Study)",cur:anStudied,tot:141,color:"#5ba3d0"},
+    {sec:"animals",    icon:"🔪",name:"Skin Deep",   cur:anSkinned, tot:71,  color:"#c07040"},
+    {sec:"goldmedals", icon:"🥇",name:"Gold Medals", cur:gmDone,   tot:70,   color:"#d4b020"},
+    {sec:"strangers",  icon:"🗣️",name:"Strangers",   cur:stsDone,  tot:22,   color:"#9a8040"},
+    {sec:"minigames",  icon:"🎲",name:"Mini Games",  cur:mgDone,   tot:7,    color:"#c060a0"},
+    {sec:"online",     icon:"🌐",name:"Online",      cur:olDone,   tot:18,   color:"#5ba3d0"},
+  ];
+  const grid=document.getElementById("dash-grid");
+  if(!grid._built){
+    grid._built=true;
+    DASH.forEach(d=>{
+      const card=document.createElement("div");
+      card.className="dash-card"; card.style.borderColor=d.color+"30";
+      card.dataset.sec=d.sec;
+      card.onclick=()=>{ document.querySelectorAll(".nav-item[data-sec='"+d.sec+"']")[0]?.click(); };
+      card.innerHTML=`<div class="d-top"><div class="d-icon">${d.icon}</div><div class="d-nums" id="dc-${d.name.replace(/[^a-z]/gi,'')}">${d.cur}/${d.tot}</div></div><div class="d-name" style="color:${d.color}">${d.name}</div><div class="prog-bar-bg"><div class="prog-bar-fg" id="db-${d.name.replace(/[^a-z]/gi,'')}" style="background:linear-gradient(90deg,${d.color}60,${d.color});width:${Math.round(d.cur/d.tot*100)}%"></div></div><div class="d-pct" id="dp-${d.name.replace(/[^a-z]/gi,'')}">${Math.round(d.cur/d.tot*100)}%</div>`;
+      grid.appendChild(card);
+    });
+  } else {
+    DASH.forEach(d=>{
+      const key=d.name.replace(/[^a-z]/gi,"");
+      const pct=Math.round(d.cur/d.tot*100);
+      const numEl=document.getElementById("dc-"+key);
+      const barEl=document.getElementById("db-"+key);
+      const pctEl=document.getElementById("dp-"+key);
+      if(numEl) numEl.textContent=`${d.cur}/${d.tot}`;
+      if(barEl) barEl.style.width=pct+"%";
+      if(pctEl) pctEl.textContent=pct===100?"✦ DONE":pct+"%";
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════ RESET SECTION
+function resetSection(section){
+  if(!confirm(`Reset ${section} progress?`)) return;
+  if(section==="trophies") TROPHIES.forEach(t=>{ S[t.id]=false; });
+  if(section==="challenges") CHALLENGES.forEach(cat=>cat.tasks.forEach(t=>{ S[`ch_${cat.id}_${t.n}_done`]=false; S[`ch_${cat.id}_${t.n}_val`]=0; }));
+  if(section==="animals") ANIMALS.forEach(a=>{ S[`a_${a.n}`]={st:false,sk:false}; });
+  if(section==="story") STORY_CHAPTERS.forEach(c=>{ S[c.id]=false; });
+  if(section==="minigames") MINIGAMES.forEach(m=>{ S[m.id]=false; });
+  if(section==="strangers") STRANGERS.forEach(s=>{ S[s.id]=false; });
+  if(section==="online") ONLINE.forEach(t=>{ S[t.id]=false; });
+  if(section==="collectibles") COLLECTIBLES.forEach(c=>{ S[`coll_${c.id}`]=0; });
+  save();
+  // re-render current section
+  const renders={trophies:renderTrophies,challenges:renderChallenges,animals:renderAnimals,story:renderStory,minigames:renderMinigames,strangers:renderStrangers,online:renderOnline,collectibles:renderCollectibles};
+  if(renders[section]) renders[section]();
+  updateAll();
+}
+
+// ═══════════════════════════════════════════════ INIT RENDER
+renderChallenges();
+renderTrophies();
+renderAnimals();
+renderStory();
+renderMinigames();
+renderStrangers();
+renderOnline();
+renderCollectibles();
+updateAll();
+updateGold();
+</script>
+</body>
+</html>
